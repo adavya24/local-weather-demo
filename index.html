@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Weather Lookup • Open-Meteo</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+    crossorigin="anonymous"
+  />
+  <style>
+    body { background: #f8fafc; }
+    .results-card { display: none; }
+    .spinner { display: none; }
+    .footer-note { font-size: 0.9rem; color: #6c757d; }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="text-center mb-4">
+          <h1 class="h3 fw-semibold">Current Weather</h1>
+          <p class="text-muted mb-0">Search by city name. Powered by Open‑Meteo.</p>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="row g-2 align-items-center">
+              <div class="col-12 col-md-8">
+                <label for="cityInput" class="form-label mb-1">City</label>
+                <input id="cityInput" type="text" class="form-control" placeholder="e.g., London, Tokyo, New York" />
+              </div>
+              <div class="col-12 col-md-4 d-grid mt-3 mt-md-0">
+                <label class="form-label mb-1 d-none d-md-block">&nbsp;</label>
+                <button id="fetchBtn" class="btn btn-primary">
+                  <span class="btn-label">Get Weather</span>
+                  <span class="spinner spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+            <div id="feedback" class="form-text text-danger mt-2"></div>
+          </div>
+        </div>
+
+        <div id="results" class="card results-card shadow-sm mt-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h2 id="locationTitle" class="h5 mb-0"></h2>
+              <span id="timestamp" class="text-muted small"></span>
+            </div>
+            <hr />
+            <div class="row text-center">
+              <div class="col-6">
+                <div class="fw-semibold text-muted">Temperature</div>
+                <div id="tempVal" class="display-6"></div>
+              </div>
+              <div class="col-6">
+                <div class="fw-semibold text-muted">Humidity</div>
+                <div id="humidityVal" class="display-6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="footer-note mt-4 text-center">
+          Data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open‑Meteo</a>. No API key required.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cityInput = document.getElementById('cityInput');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const spinner = document.querySelector('.spinner');
+    const feedback = document.getElementById('feedback');
+    const resultsCard = document.getElementById('results');
+    const locationTitle = document.getElementById('locationTitle');
+    const timestampEl = document.getElementById('timestamp');
+    const tempVal = document.getElementById('tempVal');
+    const humidityVal = document.getElementById('humidityVal');
+
+    function setLoading(isLoading) {
+      fetchBtn.disabled = isLoading;
+      spinner.style.display = isLoading ? 'inline-block' : 'none';
+    }
+
+    function showFeedback(message, isError = true) {
+      feedback.classList.toggle('text-danger', isError);
+      feedback.classList.toggle('text-success', !isError);
+      feedback.textContent = message || '';
+    }
+
+    function showResults(show) {
+      resultsCard.style.display = show ? 'block' : 'none';
+    }
+
+    async function fetchWeatherForCity(city) {
+      const q = city.trim();
+      if (!q) {
+        showFeedback('Please enter a city name.');
+        showResults(false);
+        return;
+      }
+      setLoading(true);
+      showFeedback('');
+      showResults(false);
+
+      try {
+        // 1) Geocoding to get coordinates for the city
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`;
+        const geoRes = await fetch(geoUrl);
+        if (!geoRes.ok) throw new Error('Geocoding request failed.');
+        const geoData = await geoRes.json();
+
+        if (!geoData.results || geoData.results.length === 0) {
+          showFeedback('City not found. Try a different name or add a country (e.g., "Paris, FR").');
+          return;
+        }
+
+        const place = geoData.results[0];
+        const { latitude, longitude, name, country, admin1 } = place;
+
+        // 2) Fetch current weather
+        const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m`;
+        const meteoRes = await fetch(meteoUrl);
+        if (!meteoRes.ok) throw new Error('Weather request failed.');
+        const meteoData = await meteoRes.json();
+
+        const current = meteoData.current || {};
+        const units = meteoData.current_units || {};
+        const temp = current.temperature_2m;
+        const rh = current.relative_humidity_2m;
+
+        if (typeof temp === 'undefined' || typeof rh === 'undefined') {
+          showFeedback('Weather data is unavailable for this location.');
+          return;
+        }
+
+        // Populate UI
+        const locParts = [name, admin1, country].filter(Boolean);
+        locationTitle.textContent = locParts.join(', ');
+
+        const tempUnit = units.temperature_2m || '°C';
+        const rhUnit = units.relative_humidity_2m || '%';
+        tempVal.textContent = `${temp} ${tempUnit}`;
+        humidityVal.textContent = `${rh} ${rhUnit}`;
+
+        const timeStr = current.time || '';
+        timestampEl.textContent = timeStr ? `As of ${timeStr}` : '';
+
+        showResults(true);
+        showFeedback('Fetched successfully.', false);
+      } catch (err) {
+        console.error(err);
+        showFeedback('Something went wrong. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Events
+    fetchBtn.addEventListener('click', () => fetchWeatherForCity(cityInput.value));
+    cityInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        fetchWeatherForCity(cityInput.value);
+      }
+    });
+
+    // Optional: set a sensible default for quick demo
+    window.addEventListener('DOMContentLoaded', () => {
+      cityInput.value = 'London';
+    });
+  </script>
+</body>
+</html>
