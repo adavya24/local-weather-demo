@@ -2,177 +2,497 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simple Weather Lookup • Open-Meteo</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
-    crossorigin="anonymous"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather Dashboard</title>
   <style>
-    body { background: #f8fafc; }
-    .results-card { display: none; }
-    .spinner { display: none; }
-    .footer-note { font-size: 0.9rem; color: #6c757d; }
+    :root{
+      --bg:#0f172a;
+      --card:#111827;
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --accent:#38bdf8;
+      --accent-2:#60a5fa;
+      --border:#1f2937;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% -10%, #0ea5e980 0%, transparent 60%), radial-gradient(900px 700px at 110% 10%, #60a5fa60 0%, transparent 50%), var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    .app{
+      max-width:980px;
+      margin:0 auto;
+      padding:24px;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:16px;
+    }
+    h1{
+      font-size:24px;
+      margin:0;
+      letter-spacing:.4px;
+    }
+    .unit-toggle{
+      display:inline-flex;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:4px;
+      gap:4px;
+    }
+    .unit-toggle button{
+      background:transparent;
+      border:0;
+      color:var(--muted);
+      padding:8px 14px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    .unit-toggle button.active{
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color:#0b1220;
+    }
+    .search{
+      display:flex;
+      gap:8px;
+      margin-bottom:16px;
+    }
+    .search input{
+      flex:1;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:rgba(17,24,39,0.9);
+      color:var(--text);
+      outline:none;
+    }
+    .search button{
+      padding:12px 16px;
+      border-radius:10px;
+      border:0;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color:#0b1220;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .cards{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:16px;
+    }
+    @media(min-width:720px){
+      .cards{
+        grid-template-columns: 1.2fr 1fr;
+      }
+    }
+    .card{
+      background:rgba(17,24,39,0.7);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:18px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.4), inset 0 1px 0 rgba(255,255,255,0.03);
+      backdrop-filter: blur(6px);
+    }
+    .muted{ color: var(--muted); }
+    .location-row{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .loc{
+      font-size:20px;
+      font-weight:700;
+    }
+    .current-wrap{
+      margin-top:8px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    .icon{
+      font-size:42px;
+      line-height:1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    }
+    .temp{
+      font-size:48px;
+      font-weight:800;
+      letter-spacing:-1px;
+    }
+    .desc{
+      font-size:14px;
+      margin-top:6px;
+      color:var(--muted);
+    }
+    .forecast{
+      margin-top:8px;
+    }
+    .forecast-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+      margin-top:8px;
+    }
+    .f-item{
+      background:rgba(11,18,32,0.55);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-start;
+    }
+    .f-top{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .f-day{ font-weight:700; }
+    .f-icon{ font-size:26px; }
+    .minmax{
+      display:flex;
+      gap:8px;
+      font-weight:600;
+    }
+    .min{ color:#93c5fd; }
+    .max{ color:#fca5a5; }
+    .hidden{ display:none; }
+    .small{ font-size:12px; }
+    .loading{
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%{ opacity:.6 }
+      50%{ opacity:1 }
+      100%{ opacity:.6 }
+    }
+    .footer-note{ margin-top:16px; font-size:12px; color:var(--muted); text-align:center;}
+    a{ color: var(--accent); text-decoration:none;}
+    a:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
-  <div class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-7">
-        <div class="text-center mb-4">
-          <h1 class="h3 fw-semibold">Current Weather</h1>
-          <p class="text-muted mb-0">Search by city name. Powered by Open‑Meteo.</p>
-        </div>
-
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <div class="row g-2 align-items-center">
-              <div class="col-12 col-md-8">
-                <label for="cityInput" class="form-label mb-1">City</label>
-                <input id="cityInput" type="text" class="form-control" placeholder="e.g., London, Tokyo, New York" />
-              </div>
-              <div class="col-12 col-md-4 d-grid mt-3 mt-md-0">
-                <label class="form-label mb-1 d-none d-md-block">&nbsp;</label>
-                <button id="fetchBtn" class="btn btn-primary">
-                  <span class="btn-label">Get Weather</span>
-                  <span class="spinner spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
-                </button>
-              </div>
-            </div>
-            <div id="feedback" class="form-text text-danger mt-2"></div>
-          </div>
-        </div>
-
-        <div id="results" class="card results-card shadow-sm mt-4">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h2 id="locationTitle" class="h5 mb-0"></h2>
-              <span id="timestamp" class="text-muted small"></span>
-            </div>
-            <hr />
-            <div class="row text-center">
-              <div class="col-6">
-                <div class="fw-semibold text-muted">Temperature</div>
-                <div id="tempVal" class="display-6"></div>
-              </div>
-              <div class="col-6">
-                <div class="fw-semibold text-muted">Humidity</div>
-                <div id="humidityVal" class="display-6"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <p class="footer-note mt-4 text-center">
-          Data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open‑Meteo</a>. No API key required.
-        </p>
+  <div class="app">
+    <header>
+      <h1>Weather Dashboard</h1>
+      <div class="unit-toggle" aria-label="Temperature Unit Toggle">
+        <button id="btnC" class="active" type="button">°C</button>
+        <button id="btnF" type="button">°F</button>
       </div>
+    </header>
+
+    <form class="search" id="searchForm">
+      <input id="cityInput" type="text" placeholder="Enter city (e.g., London, Tokyo)" aria-label="City name" required />
+      <button type="submit">Search</button>
+    </form>
+
+    <div class="cards">
+      <section class="card" id="currentCard" aria-live="polite">
+        <div class="location-row">
+          <div>
+            <div class="loc" id="locName">—</div>
+            <div class="muted small" id="locTime">—</div>
+          </div>
+          <div class="muted small" id="coords">—</div>
+        </div>
+        <div class="current-wrap">
+          <div class="icon" id="currentIcon">⛅</div>
+          <div>
+            <div class="temp" id="currentTemp">—</div>
+            <div class="desc" id="currentDesc">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card forecast" id="forecastCard">
+        <div class="location-row">
+          <div class="loc">3-Day Forecast</div>
+          <div class="muted small" id="forecastUnitNote">Temperatures in °C</div>
+        </div>
+        <div class="forecast-grid" id="forecastGrid">
+          <!-- 3 forecast items will render here -->
+        </div>
+      </section>
+    </div>
+
+    <div class="footer-note">
+      Data by Open‑Meteo | Geocoding by Open‑Meteo
     </div>
   </div>
 
   <script>
-    const cityInput = document.getElementById('cityInput');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const spinner = document.querySelector('.spinner');
-    const feedback = document.getElementById('feedback');
-    const resultsCard = document.getElementById('results');
-    const locationTitle = document.getElementById('locationTitle');
-    const timestampEl = document.getElementById('timestamp');
-    const tempVal = document.getElementById('tempVal');
-    const humidityVal = document.getElementById('humidityVal');
+    const state = {
+      unit: 'C', // 'C' or 'F'
+      location: null,
+      current: null,
+      daily: [] // includes today as [0], we will show next 3 days ([1],[2],[3])
+    };
 
-    function setLoading(isLoading) {
-      fetchBtn.disabled = isLoading;
-      spinner.style.display = isLoading ? 'inline-block' : 'none';
+    const els = {
+      btnC: document.getElementById('btnC'),
+      btnF: document.getElementById('btnF'),
+      form: document.getElementById('searchForm'),
+      input: document.getElementById('cityInput'),
+      locName: document.getElementById('locName'),
+      locTime: document.getElementById('locTime'),
+      coords: document.getElementById('coords'),
+      currentIcon: document.getElementById('currentIcon'),
+      currentTemp: document.getElementById('currentTemp'),
+      currentDesc: document.getElementById('currentDesc'),
+      forecastGrid: document.getElementById('forecastGrid'),
+      forecastUnitNote: document.getElementById('forecastUnitNote')
+    };
+
+    // Weather code mappings (WMO)
+    function codeToDescription(code){
+      const map = {
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Depositing rime fog",
+        51: "Light drizzle",
+        53: "Moderate drizzle",
+        55: "Dense drizzle",
+        56: "Freezing drizzle",
+        57: "Dense freezing drizzle",
+        61: "Slight rain",
+        63: "Moderate rain",
+        65: "Heavy rain",
+        66: "Freezing rain",
+        67: "Heavy freezing rain",
+        71: "Slight snowfall",
+        73: "Moderate snowfall",
+        75: "Heavy snowfall",
+        77: "Snow grains",
+        80: "Slight rain showers",
+        81: "Moderate rain showers",
+        82: "Violent rain showers",
+        85: "Slight snow showers",
+        86: "Heavy snow showers",
+        95: "Thunderstorm",
+        96: "Thunderstorm with hail",
+        99: "Severe thunderstorm with hail"
+      };
+      return map[code] ?? "Unknown";
+    }
+    function codeToIcon(code){
+      if (code === 0) return "☀️";
+      if (code === 1 || code === 2) return "🌤️";
+      if (code === 3) return "☁️";
+      if (code === 45 || code === 48) return "🌫️";
+      if ([51,53,55,56,57,80,81,82].includes(code)) return "🌦️";
+      if ([61,63,65,66,67].includes(code)) return "🌧️";
+      if ([71,73,75,77,85,86].includes(code)) return "❄️";
+      if ([95,96,99].includes(code)) return "⛈️";
+      return "⛅";
     }
 
-    function showFeedback(message, isError = true) {
-      feedback.classList.toggle('text-danger', isError);
-      feedback.classList.toggle('text-success', !isError);
-      feedback.textContent = message || '';
+    function cToF(c){ return c * 9/5 + 32; }
+    function fmtTemp(valueC){
+      if (valueC == null || isNaN(valueC)) return "—";
+      const v = state.unit === 'C' ? valueC : cToF(valueC);
+      const rounded = Math.round(v * 10) / 10;
+      return `${rounded}°${state.unit}`;
+    }
+    function fmtCoord(n){
+      return (Math.round(n * 1000)/1000).toFixed(3);
+    }
+    function dayName(dateStr){
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(undefined, { weekday: 'short', month:'short', day:'numeric' });
+    }
+    function fmtTimeLocal(iso){
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, { weekday:'short', hour:'2-digit', minute:'2-digit' });
     }
 
-    function showResults(show) {
-      resultsCard.style.display = show ? 'block' : 'none';
+    async function geocodeCity(name){
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=en&format=json`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Geocoding failed');
+      const data = await res.json();
+      if (!data || !data.results || data.results.length === 0) throw new Error('No results for that place');
+      const r = data.results[0];
+      return {
+        name: `${r.name}${r.admin1 ? ', ' + r.admin1 : ''}${r.country ? ', ' + r.country : ''}`,
+        lat: r.latitude,
+        lon: r.longitude
+      };
     }
 
-    async function fetchWeatherForCity(city) {
-      const q = city.trim();
-      if (!q) {
-        showFeedback('Please enter a city name.');
-        showResults(false);
-        return;
+    async function fetchWeather(lat, lon){
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Weather fetch failed');
+      return res.json();
+    }
+
+    function render(){
+      // Current
+      if (state.location){
+        els.locName.textContent = state.location.name;
+        els.coords.textContent = `${fmtCoord(state.location.lat)}°, ${fmtCoord(state.location.lon)}°`;
       }
+      if (state.current){
+        els.currentIcon.textContent = codeToIcon(state.current.code);
+        els.currentTemp.textContent = fmtTemp(state.current.tempC);
+        els.currentDesc.textContent = codeToDescription(state.current.code);
+        els.locTime.textContent = `As of ${fmtTimeLocal(state.current.time)}`;
+      } else {
+        els.currentTemp.textContent = '—';
+        els.currentDesc.textContent = '—';
+        els.locTime.textContent = '—';
+      }
+
+      // Forecast note
+      els.forecastUnitNote.textContent = `Temperatures in °${state.unit}`;
+
+      // Forecast (next 3 days)
+      const grid = els.forecastGrid;
+      grid.innerHTML = '';
+      const days = state.daily.slice(1, 4); // skip today
+      days.forEach(d => {
+        const item = document.createElement('div');
+        item.className = 'f-item';
+        item.innerHTML = `
+          <div class="f-top">
+            <div class="f-icon">${codeToIcon(d.code)}</div>
+            <div>
+              <div class="f-day">${dayName(d.date)}</div>
+              <div class="muted small">${codeToDescription(d.code)}</div>
+            </div>
+          </div>
+          <div class="minmax">
+            <div class="min">Min: ${fmtTemp(d.minC)}</div>
+            <div class="max">Max: ${fmtTemp(d.maxC)}</div>
+          </div>
+        `;
+        grid.appendChild(item);
+      });
+    }
+
+    async function loadByCity(name){
       setLoading(true);
-      showFeedback('');
-      showResults(false);
-
-      try {
-        // 1) Geocoding to get coordinates for the city
-        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`;
-        const geoRes = await fetch(geoUrl);
-        if (!geoRes.ok) throw new Error('Geocoding request failed.');
-        const geoData = await geoRes.json();
-
-        if (!geoData.results || geoData.results.length === 0) {
-          showFeedback('City not found. Try a different name or add a country (e.g., "Paris, FR").');
-          return;
-        }
-
-        const place = geoData.results[0];
-        const { latitude, longitude, name, country, admin1 } = place;
-
-        // 2) Fetch current weather
-        const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m`;
-        const meteoRes = await fetch(meteoUrl);
-        if (!meteoRes.ok) throw new Error('Weather request failed.');
-        const meteoData = await meteoRes.json();
-
-        const current = meteoData.current || {};
-        const units = meteoData.current_units || {};
-        const temp = current.temperature_2m;
-        const rh = current.relative_humidity_2m;
-
-        if (typeof temp === 'undefined' || typeof rh === 'undefined') {
-          showFeedback('Weather data is unavailable for this location.');
-          return;
-        }
-
-        // Populate UI
-        const locParts = [name, admin1, country].filter(Boolean);
-        locationTitle.textContent = locParts.join(', ');
-
-        const tempUnit = units.temperature_2m || '°C';
-        const rhUnit = units.relative_humidity_2m || '%';
-        tempVal.textContent = `${temp} ${tempUnit}`;
-        humidityVal.textContent = `${rh} ${rhUnit}`;
-
-        const timeStr = current.time || '';
-        timestampEl.textContent = timeStr ? `As of ${timeStr}` : '';
-
-        showResults(true);
-        showFeedback('Fetched successfully.', false);
-      } catch (err) {
-        console.error(err);
-        showFeedback('Something went wrong. Please try again.');
+      try{
+        const loc = await geocodeCity(name);
+        state.location = loc;
+        const data = await fetchWeather(loc.lat, loc.lon);
+        // Populate state
+        state.current = {
+          tempC: data.current_weather?.temperature ?? null,
+          code: data.current_weather?.weathercode ?? null,
+          time: data.current_weather?.time ?? null
+        };
+        const daily = (data.daily?.time || []).map((date, i) => ({
+          date,
+          minC: data.daily?.temperature_2m_min?.[i] ?? null,
+          maxC: data.daily?.temperature_2m_max?.[i] ?? null,
+          code: data.daily?.weathercode?.[i] ?? null
+        }));
+        state.daily = daily;
+        render();
+      } catch(err){
+        alert(err.message || 'Something went wrong.');
       } finally {
         setLoading(false);
       }
     }
 
+    function setLoading(isLoading){
+      const add = (el, cls) => el.classList[isLoading ? 'add' : 'remove'](cls);
+      add(els.currentTemp, 'loading');
+      add(els.currentDesc, 'loading');
+      add(els.locName, 'loading');
+      add(els.locTime, 'loading');
+      add(els.coords, 'loading');
+      add(els.forecastGrid, 'loading');
+    }
+
     // Events
-    fetchBtn.addEventListener('click', () => fetchWeatherForCity(cityInput.value));
-    cityInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        fetchWeatherForCity(cityInput.value);
-      }
+    els.form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const q = els.input.value.trim();
+      if (!q) return;
+      loadByCity(q);
+    });
+    els.btnC.addEventListener('click', ()=>{
+      if (state.unit === 'C') return;
+      state.unit = 'C';
+      els.btnC.classList.add('active');
+      els.btnF.classList.remove('active');
+      render();
+    });
+    els.btnF.addEventListener('click', ()=>{
+      if (state.unit === 'F') return;
+      state.unit = 'F';
+      els.btnF.classList.add('active');
+      els.btnC.classList.remove('active');
+      render();
     });
 
-    // Optional: set a sensible default for quick demo
-    window.addEventListener('DOMContentLoaded', () => {
-      cityInput.value = 'London';
+    // Initial load (fallback city)
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // Try to use the browser location first; fallback to New York
+      if (navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(async (pos)=>{
+          setLoading(true);
+          try{
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            // Reverse geocode-like: we can just show coordinates, but also try to fetch a nearby place name
+            const nearUrl = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en&format=json`;
+            const res = await fetch(nearUrl);
+            let place = null;
+            if (res.ok){
+              const data = await res.json();
+              if (data && data.results && data.results[0]){
+                const r = data.results[0];
+                place = {
+                  name: `${r.name}${r.admin1 ? ', ' + r.admin1 : ''}${r.country ? ', ' + r.country : ''}`,
+                  lat: r.latitude, lon: r.longitude
+                };
+              }
+            }
+            if (!place){
+              place = { name: 'Your Location', lat, lon };
+            }
+            state.location = place;
+            const weather = await fetchWeather(place.lat, place.lon);
+            state.current = {
+              tempC: weather.current_weather?.temperature ?? null,
+              code: weather.current_weather?.weathercode ?? null,
+              time: weather.current_weather?.time ?? null
+            };
+            state.daily = (weather.daily?.time || []).map((date, i) => ({
+              date,
+              minC: weather.daily?.temperature_2m_min?.[i] ?? null,
+              maxC: weather.daily?.temperature_2m_max?.[i] ?? null,
+              code: weather.daily?.weathercode?.[i] ?? null
+            }));
+            render();
+          } catch {
+            loadByCity('New York');
+          } finally {
+            setLoading(false);
+          }
+        }, ()=>{
+          loadByCity('New York');
+        }, { timeout: 5000 });
+      } else {
+        loadByCity('New York');
+      }
     });
   </script>
 </body>
