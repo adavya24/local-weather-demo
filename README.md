@@ -1,36 +1,22 @@
-# Simple Weather Lookup (Open‑Meteo)
+# Weather Dashboard
 
 ## Overview
-A minimal, single-page web app to fetch the current temperature and humidity for a given city using the Open‑Meteo public API. No API key or backend required. Built with Bootstrap 5.
+A lightweight, single-page weather dashboard that shows the current weather and a 3-day forecast. It supports toggling temperature units between Celsius and Fahrenheit and displays small weather icons for quick visual context.
+
+- Data source: Open‑Meteo (no API key required)
+- Geocoding: Open‑Meteo Geocoding API
+- Works in any modern browser
 
 ## Setup
-- Requirements: Any modern web browser with internet access.
-- Steps: Download or clone the repository and open index.html in your browser.
+1. Download or clone the project.
+2. Open index.html in your browser. No build steps or API keys required.
 
 ## Usage
-- Enter a city name (e.g., “Paris”, “New York”, “Tokyo”). Adding a country code can help disambiguate (e.g., “Paris, FR”).
-- Click “Get Weather” or press Enter.
-- The app resolves the city to coordinates via Open‑Meteo Geocoding API and displays current temperature and relative humidity.
+- Enter a city name (e.g., "Paris", "Tokyo") and click Search.
+- Use the °C / °F toggle in the header to switch temperature units. This updates both current weather and the 3-day forecast.
+- On first load, the app attempts to use your device location; otherwise it falls back to New York.
 
-## License
-MIT License
-
-Copyright (c) 2025 Weather App Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the “Software”), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+## Improvements in Round 2
+- Added a 3-day forecast section below the current weather.
+- Implemented a Celsius/Fahrenheit toggle that updates all temperatures consistently.
+- Displayed small weather icons (emoji-based) for both current conditions and each forecast day while preserving the existing styling.
